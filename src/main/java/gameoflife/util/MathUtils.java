@@ -6,17 +6,17 @@ package gameoflife.util;
  */
 public class MathUtils {
     public static int getNextLargerPowerOfTwo(int x) {
-        int v = x;
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v++;
-
-        int r = v;
-        assert r >= x : "x=" + x + " r=" + r;
-        return r;
-    }    
+        assert x <= 0x40000000 : "Value too large.";
+        for (int bit = 0; bit < 31; bit++) {
+            int v = 1 << bit;
+            if (x == v) {
+                return v;
+            }
+            if (v > x) {
+                assert v >= 0 && v >= x : "x=" + x + " result=" + v;
+                return v;
+            }
+        }
+        throw new RuntimeException(String.format("Problem with %d = 0x%08x", x, x));
+    }
 }

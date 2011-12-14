@@ -1,15 +1,13 @@
 package gameoflife.ui;
 
 import gameoflife.GameOfLife;
-import gameoflife.impl.*;
+import gameoflife.impl.RaimarsNonCachingQuadTreeGameOfLife;
 import gameoflife.templates.CellBlock;
 import gameoflife.templates.Pattern;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
-import java.awt.Point;
 import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -48,7 +46,8 @@ public class Main extends JDialog {
         setModal(true);
         final Dimension dimension = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
         // _gameOfLife = new SaschasGameOfLife1(_width, _height);
-        _gameOfLife = new MichasGameOfLife3();
+//        _gameOfLife = new MichasGameOfLife3();
+        _gameOfLife = new RaimarsNonCachingQuadTreeGameOfLife(new Rectangle(0, 0, _width, _height));
         // initWithPattern();
         initRandom();
         setMinimumSize(dimension);
@@ -121,8 +120,8 @@ public class Main extends JDialog {
             final CellBlock cellBlock = pattern.getCellBlock(i);
             for (Point livingCell : cellBlock.getLivingCells()) {
                 _gameOfLife.setCellAlive(
-                    livingCell.x + (_width / 2) + cellBlock.getXOffset(),
-                    livingCell.y + (_height / 2) + cellBlock.getYOffset()
+                        livingCell.x + (_width / 2) + cellBlock.getXOffset(),
+                        livingCell.y + (_height / 2) + cellBlock.getYOffset()
                 );
             }
         }

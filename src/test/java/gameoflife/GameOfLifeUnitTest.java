@@ -1,6 +1,9 @@
 package gameoflife;
 
-import gameoflife.impl.*;
+import gameoflife.impl.MichasGameOfLife1;
+import gameoflife.impl.MichasGameOfLife3;
+import gameoflife.impl.RaimarsNonCachingQuadTreeGameOfLife;
+import gameoflife.impl.SaschasGameOfLife1;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -8,24 +11,22 @@ import org.junit.runner.RunWith;
 
 import java.awt.*;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assume.assumeThat;
 
 @RunWith(Theories.class)
 public class GameOfLifeUnitTest {
 
     @DataPoints
     public static GameOfLife[] getImplementationsToTest() {
-        return new GameOfLife[] {
-            new SaschasGameOfLife1(),
-            new MichasGameOfLife1(),
-            new MichasGameOfLife3()
+        return new GameOfLife[]{
+                new SaschasGameOfLife1(),
+                new MichasGameOfLife1(),
+                new MichasGameOfLife3(),
+                new RaimarsNonCachingQuadTreeGameOfLife(new Rectangle(-12345678, -12345678, 87654321 + 12345678 + 10, 87654321 + 12345678 + 10))
         };
     }
 
@@ -54,11 +55,11 @@ public class GameOfLifeUnitTest {
 
     @Theory
     public void test_setCellAlive_with_large_coordinates(GameOfLife gameOfLife) {
-        gameOfLife.setCellAlive(-123456789, 987654321);
+        gameOfLife.setCellAlive(-12345678, 87654321);
 
         HashSet<Point> coordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
 
-        assertThat(coordinatesOfAliveCells, is(newHashSet(new Point(-123456789, 987654321))));
+        assertThat(coordinatesOfAliveCells, is(newHashSet(new Point(-12345678, 87654321))));
     }
 
     @Theory
@@ -80,7 +81,7 @@ public class GameOfLifeUnitTest {
         gameOfLife.setCellAlive(3, 3);
 
         gameOfLife.calculateNextGeneration();
-        
+
         assertThat(gameOfLife.getCoordinatesOfAliveCells().iterator().hasNext(), is(false));
     }
 
@@ -138,9 +139,9 @@ public class GameOfLifeUnitTest {
     @Theory
     public void test_pentadecathlon(GameOfLife gameOfLife) {
         Set<Point> pentadecathlon = newHashSet(
-            new Point(0,1), new Point(1,1), new Point(2,0), new Point(2,2),
-            new Point(3,1), new Point(4,1), new Point(5,1), new Point(6,1),
-            new Point(7,0), new Point(7,2), new Point(8,1), new Point(9,1)
+                new Point(0, 1), new Point(1, 1), new Point(2, 0), new Point(2, 2),
+                new Point(3, 1), new Point(4, 1), new Point(5, 1), new Point(6, 1),
+                new Point(7, 0), new Point(7, 2), new Point(8, 1), new Point(9, 1)
         );
         for (Point p : pentadecathlon) {
             gameOfLife.setCellAlive(p.x, p.y);
@@ -157,11 +158,11 @@ public class GameOfLifeUnitTest {
     @Theory
     public void test_glider_at_large_coordinates(GameOfLife gameOfLife) {
         Set<Point> glider = newHashSet(
-            new Point(100001,100002),
-            new Point(100002,100003),
-            new Point(100003,100001),
-            new Point(100003,100002),
-            new Point(100003,100003)
+                new Point(100001, 100002),
+                new Point(100002, 100003),
+                new Point(100003, 100001),
+                new Point(100003, 100002),
+                new Point(100003, 100003)
         );
         for (Point p : glider) {
             gameOfLife.setCellAlive(p.x, p.y);
@@ -173,11 +174,11 @@ public class GameOfLifeUnitTest {
 
         HashSet<Point> coordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
         assertThat(coordinatesOfAliveCells, is(newHashSet(
-            new Point(100002,100003),
-            new Point(100003,100004),
-            new Point(100004,100002),
-            new Point(100004,100003),
-            new Point(100004,100004)
+                new Point(100002, 100003),
+                new Point(100003, 100004),
+                new Point(100004, 100002),
+                new Point(100004, 100003),
+                new Point(100004, 100004)
         )));
     }
 }

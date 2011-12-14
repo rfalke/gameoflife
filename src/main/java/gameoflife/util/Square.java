@@ -21,4 +21,8 @@ public class Square {
                 ", size=" + size +
                 '}';
     }
+
+    public boolean contains(int tx, int ty) {
+        return tx >= x && tx < x + size && ty >= y && ty < y + size;
+    }
 }

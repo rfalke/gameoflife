@@ -3,6 +3,8 @@ package gameoflife.impl;
 import gameoflife.util.Square;
 
 import java.awt.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import static gameoflife.util.MathUtils.getNextLargerPowerOfTwo;
 
@@ -11,22 +13,28 @@ import static gameoflife.util.MathUtils.getNextLargerPowerOfTwo;
  * Date: Dec 13, 2011
  */
 public class QuadTree {
-    private Rectangle boundingBox;
+    private Rectangle boundingBox = new Rectangle();
     private final Node root;
 
     public QuadTree(Rectangle boundingBoxToSupport) {
         root = constructRootFromBoundingBox(boundingBoxToSupport);
     }
 
-    public void set(int x, int y, boolean alive) {
-        root.set(x, y, alive);
+    public void setCellAlive(int x, int y) {
+        boundingBox.add(x, y);
+        root.set(x, y);
     }
 
     public boolean get(int x, int y) {
         return root.get(x, y);
     }
 
+    public Rectangle getBoundingBox() {
+        return boundingBox;
+    }
+
     private Node constructRootFromBoundingBox(Rectangle boundingBoxToSupport) {
+        assert boundingBoxToSupport.width > 0 && boundingBoxToSupport.height > 0;
         int size = Math.max(boundingBoxToSupport.width, boundingBoxToSupport.height);
         if (size < 8) {
             size = 8;
@@ -45,6 +53,12 @@ public class QuadTree {
         }
     }
 
+    public Iterable<Point> getCoordinatesOfAliveCells() {
+        Set<Point> result = new HashSet<Point>();
+        root.collectCoordinatesOfAliveCells(result);
+        return result;
+    }
+
     public abstract class Node {
         protected final Square square;
 
@@ -52,13 +66,15 @@ public class QuadTree {
             this.square = square;
         }
 
-        public abstract void set(int x, int y, boolean alive);
+        public abstract void set(int x, int y);
 
         public abstract boolean get(int x, int y);
 
         int toInnerX(int x) {
             final int r = x - square.x;
-            assert r >= 0 && r < square.size;
+            if (r < 0 || r >= square.size) {
+                throw new IllegalArgumentException();
+            }
             return r;
         }
 
@@ -67,6 +83,8 @@ public class QuadTree {
             assert r >= 0 && r < square.size;
             return r;
         }
+
+        public abstract void collectCoordinatesOfAliveCells(Set<Point> points);
     }
 
 
@@ -78,7 +96,10 @@ public class QuadTree {
         }
 
         @Override
-        public void set(int x, int y, boolean alive) {
+        public void set(int x, int y) {
+            if (!square.contains(x, y)) {
+                throw new IllegalArgumentException("The point (" + x + "," + y + ") is not inside " + square);
+            }
             final ChildLoc loc = getChildLocation(x, y);
             Node child = children[loc.ordinal()];
             if (child == null) {
@@ -86,22 +107,11 @@ public class QuadTree {
                 assert newSize >= 8;
                 int newX = square.x;
                 int newY = square.y;
-                switch (loc) {
-                    case NW:
-                        // nothing
-                        break;
-                    case SW:
-                        newX += newSize;
-                        break;
-                    case NE:
-                        newY += newSize;
-                        break;
-                    case SE:
-                        newX += newSize;
-                        newY += newSize;
-                        break;
-                    default:
-                        throw new RuntimeException();
+                if (loc == ChildLoc.NE || loc == ChildLoc.SE) {
+                    newX += newSize;
+                }
+                if (loc == ChildLoc.SW || loc == ChildLoc.SE) {
+                    newY += newSize;
                 }
                 Square newSquare = new Square(newX, newY, newSize);
                 if (newSize == 8) {
@@ -111,14 +121,14 @@ public class QuadTree {
                 }
                 children[loc.ordinal()] = child;
             }
-            child.set(x, y, alive);
+            child.set(x, y);
         }
 
         private ChildLoc getChildLocation(int x, int y) {
             int innerX = toInnerX(x);
             int innerY = toInnerY(y);
-            boolean east = (innerX > square.size / 2);
-            boolean south = (innerY > square.size / 2);
+            boolean east = (innerX >= square.size / 2);
+            boolean south = (innerY >= square.size / 2);
             final ChildLoc loc;
             if (south && east) {
                 loc = ChildLoc.SE;
@@ -134,12 +144,24 @@ public class QuadTree {
 
         @Override
         public boolean get(int x, int y) {
+            if (!square.contains(x, y)) {
+                return false;
+            }
             final ChildLoc loc = getChildLocation(x, y);
             final Node child = children[loc.ordinal()];
             if (child == null) {
                 return false;
             }
             return child.get(x, y);
+        }
+
+        @Override
+        public void collectCoordinatesOfAliveCells(Set<Point> points) {
+            for (Node child : children) {
+                if (child != null) {
+                    child.collectCoordinatesOfAliveCells(points);
+                }
+            }
         }
     }
 
@@ -151,13 +173,9 @@ public class QuadTree {
         }
 
         @Override
-        public void set(int x, int y, boolean alive) {
+        public void set(int x, int y) {
             int bitIndex = calcBitIndex(x, y);
-            if (alive) {
-                bits |= 1L << bitIndex;
-            } else {
-                bits &= ~(1L << bitIndex);
-            }
+            bits |= 1L << bitIndex;
         }
 
         private int calcBitIndex(int x, int y) {
@@ -170,6 +188,19 @@ public class QuadTree {
         public boolean get(int x, int y) {
             int bitIndex = calcBitIndex(x, y);
             return (bits & (1L << bitIndex)) != 0;
+        }
+
+        @Override
+        public void collectCoordinatesOfAliveCells(Set<Point> points) {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    final int x = square.x + i;
+                    final int y = square.y + j;
+                    if (get(x, y)) {
+                        points.add(new Point(x, y));
+                    }
+                }
+            }
         }
     }
 
